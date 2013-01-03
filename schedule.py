@@ -14,20 +14,33 @@ class myThread(threading.Thread):
 		openPage = urllib.urlopen("https://telebears.berkeley.edu/enrollment-osoc/osc?_InField1=RESTRIC&_InField2="+str(self.ccn)+"&_InField3=13B4")
 		soup = BeautifulSoup(openPage.read())
 		bold = []
+		numbers = []
 		for i in soup.find_all(["div"]):
 			if ((re.findall("faced size1 bolded", str(i)) != [])):
 				bold.append(i)
 			if ((re.findall("enrolled, with a limit of", str(i)) != [])):
-				numbers = re.findall(r"([1-9][0-9]*)", str(i))
+				numbers = re.findall(r"([0-9][0-9]*)", str(i))
 
 		className = bold[1].get_text()
 		className = className[:len(className) -1]
-		enrolled = numbers[0]
-		limit = numbers[1]
-		waitList = numbers[2]
-		waitListLimit = numbers[3]
-		remaining = str(int(limit) - int(enrolled))
-		self.data.append((self.ccn, enrolled, limit, waitList, waitListLimit))
+
+
+		if (len(numbers) == 0) :
+			self.data.append((self.ccn, 0, 0, 0, 0))
+
+		elif (len(numbers) > 0):
+			enrolled = numbers[0]
+			limit = numbers[1]
+			self.data.append((self.ccn, enrolled, limit, 0, 0))
+
+		else:
+			waitList = numbers[2]
+			waitListLimit = numbers[3]
+			self.data.append((self.ccn, enrolled, limit, waitList, waitListLimit))
+
+
+
+
 
 
 def main():
