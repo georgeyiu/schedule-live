@@ -23,19 +23,19 @@ def get_live_info(ccn):
 	waitList = numbers[2]
 	waitListLimit = numbers[3]
 	remaining = str(int(limit) - int(enrolled))
-
-	
-	print '\n' + className
-	print 'Enrolled: ' + enrolled + ' Limit: ' + limit + ' Remaining: ' + remaining
-	print 'Waiting List: ' + waitList + ' Limit: ' + waitListLimit + '\n'
-
-
-
-
+	return (enrolled, limit, waitList, waitListLimit)
 
 def main():
-	ccn = sys.argv[1]
-	get_live_info(ccn)
+	dept = sys.argv[1]
+	num = sys.argv[2]
+	search_url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term=SP&p_deptname=--+Choose+a+Department+Name+--&p_classif=--+Choose+a+Course+Classification+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course=' + num + '&p_dept=' + dept + '&x=0'
+	openPage = urllib.urlopen(search_url)
+	contents = openPage.read()
+	match = re.findall(r'input type=\"hidden\" name=\"_InField2\" value=\"([0-9]*)\"', contents)
+	print '{0:<8} {1:<8} {2:<8} {3:<8} {4:<8}'.format('CCN', 'Enrolled', 'Limit', 'Waitlist', 'Limit')
+	for ccn in match:
+		enrolled, limit, waitList, waitListLimit = get_live_info(ccn)
+		print '{0:<8} {1:<8} {2:<8} {3:<8} {4:<8}'.format(ccn, enrolled, limit, waitList, waitListLimit)
 
 
 if __name__=="__main__":
