@@ -28,12 +28,14 @@ class myThread(threading.Thread):
 		if (len(numbers) == 0) :
 			self.data.append((self.ccn, 0, 0, 0, 0))
 
-		elif (len(numbers) > 0):
+		elif (len(numbers) < 3):
 			enrolled = numbers[0]
 			limit = numbers[1]
 			self.data.append((self.ccn, enrolled, limit, 0, 0))
 
 		else:
+			enrolled = numbers[0]
+			limit = numbers[1]
 			waitList = numbers[2]
 			waitListLimit = numbers[3]
 			self.data.append((self.ccn, enrolled, limit, waitList, waitListLimit))
