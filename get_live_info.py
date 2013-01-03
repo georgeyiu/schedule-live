@@ -12,23 +12,22 @@ def get_live_info(ccn):
 	bold = []
 	for i in soup.find_all(["div"]):
  		if ((re.findall("faced size1 bolded", str(i)) != [])):
-			bold.append(str(i))
+			bold.append(i)
 		if ((re.findall("enrolled, with a limit of", str(i)) != [])):
 			numbers = re.findall(r"([1-9][0-9]*)", str(i))
 
-	className = ""
+	className = bold[1].get_text()
+	className = className[:len(className) -1]
 	enrolled = numbers[0]
 	limit = numbers[1]
 	waitList = numbers[2]
 	waitListLimit = numbers[3]
-	remaining = int(limit) - int(enrolled)
-	for i in range(43, len(bold[1]) - 7):
-		className += bold[1][i]
+	remaining = str(int(limit) - int(enrolled))
+
 	
 	print '\n' + className
-	print 'Enrolled: ' + (enrolled) + ' Limit: ' + (limit) + ' Remaining: ' + remaining
-	print 'Waiting List: ' + (waitList) + ' Limit: ' + aitListLimit + '\n'
-
+	print 'Enrolled: ' + enrolled + ' Limit: ' + limit + ' Remaining: ' + remaining
+	print 'Waiting List: ' + waitList + ' Limit: ' + waitListLimit + '\n'
 
 
 
