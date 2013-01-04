@@ -1,8 +1,7 @@
-import urllib
 import re
 import sys
+import urllib
 import threading
-from bs4 import BeautifulSoup
 
 class myThread(threading.Thread):
 	def __init__(self, ccn, data):
@@ -11,38 +10,30 @@ class myThread(threading.Thread):
 		threading.Thread.__init__(self)
 
 	def run(self):
-		openPage = urllib.urlopen("https://telebears.berkeley.edu/enrollment-osoc/osc?_InField1=RESTRIC&_InField2="+str(self.ccn)+"&_InField3=13B4")
-		soup = BeautifulSoup(openPage.read())
-		bold = []
+		section_url = "https://telebears.berkeley.edu/enrollment-osoc/osc?_InField1=RESTRIC&_InField2="+str(self.ccn)+"&_InField3=13B4"
+		content = urllib.urlopen(section_url).read()
 		numbers = []
-		for i in soup.find_all(["div"]):
-			if ((re.findall("faced size1 bolded", str(i)) != [])):
-				bold.append(i)
-			if ((re.findall("enrolled, with a limit of", str(i)) != [])):
-				numbers = re.findall(r"([0-9][0-9]*)", str(i))
+		for line in content.split('\n'):
+			if 'limit' in line:
+				match = re.findall(r'([0-9]+)', line)
+				if match:
+					numbers += match
 
-		className = bold[1].get_text()
-		className = className[:len(className) -1]
+		(enrolled, limit, wait_list, wait_limit) = (0, 0, 0, 0)
 
+		match = re.search(r"faced size1 bolded'>([^:]+):</div>", content)
+		if not match:
+			return
 
-		if (len(numbers) == 0) :
-			self.data.append((self.ccn, 0, 0, 0, 0))
+		info = " ".join(match.group(1).split()[-2:])
+		enrolled = numbers[0]
+		limit = numbers[1]
 
-		elif (len(numbers) < 3):
-			enrolled = numbers[0]
-			limit = numbers[1]
-			self.data.append((self.ccn, enrolled, limit, 0, 0))
-
-		else:
-			enrolled = numbers[0]
-			limit = numbers[1]
-			waitList = numbers[2]
-			waitListLimit = numbers[3]
-			self.data.append((self.ccn, enrolled, limit, waitList, waitListLimit))
-
-
-
-
+		if (len(numbers) == 4):
+			wait_list = numbers[2]
+			wait_limit = numbers[3]
+			
+		self.data.append((info, self.ccn, enrolled, limit, wait_list, wait_limit))
 
 
 def main():
@@ -54,19 +45,23 @@ def main():
 	data = []
 	threads = []
 
-	match = re.findall(r'input type=\"hidden\" name=\"_InField2\" value=\"([0-9]*)\"', contents)
+	match = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"', contents)
 	for ccn in match:
-		threads.append(myThread(ccn, data))
-		threads[-1].start()
+		t = myThread(ccn, data)
+		t.start()
+		threads.append(t)
 
 	for t in threads:
 		t.join()
 
 	data = sorted(data, key=lambda x: x[0])
-	five_columns = '{0:<8} {1:<8} {2:<8} {3:<8} {4:<8}'
-	print five_columns.format('CCN', 'Enrolled', 'Limit', 'Waitlist', 'Limit')
-	for ccn, enrolled, limit, waitList, waitListLimit in data:
-		print five_columns.format(ccn, enrolled, limit, waitList, waitListLimit)
+	four_columns = '{0:<9} {1:<7} {2:<9} {3:<9}'
+	print four_columns.format('Name', 'CCN', 'Enrolled', 'Waitlist')
+	
+	for info, ccn, enrolled, limit, wait_list, wait_limit in data:
+		enrolled = str(enrolled) + '/' + str(limit)
+		wait_list = str(wait_list) + '/' + str(wait_limit)
+		print four_columns.format(info, ccn, enrolled, wait_list)
 
 
 if __name__=="__main__":
