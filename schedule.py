@@ -4,9 +4,9 @@ import urllib
 import threading
 
 class myThread(threading.Thread):
-	def __init__(self, ccn, data):
+	def __init__(self, ccn, stats):
 		self.ccn = ccn
-		self.data = data
+		self.stats = stats
 		threading.Thread.__init__(self)
 
 	def run(self):
@@ -21,19 +21,17 @@ class myThread(threading.Thread):
 
 		(enrolled, limit, wait_list, wait_limit) = (0, 0, 0, 0)
 
-		match = re.search(r"faced size1 bolded'>([^:]+):</div>", content)
-		if not match:
-			return
-
-		info = " ".join(match.group(1).split()[-2:])
-		enrolled = numbers[0]
-		limit = numbers[1]
-
+		if (len(numbers) >= 2):
+			enrolled = numbers[0]
+			limit = numbers[1]
 		if (len(numbers) == 4):
 			wait_list = numbers[2]
 			wait_limit = numbers[3]
-			
-		self.data.append((info, self.ccn, enrolled, limit, wait_list, wait_limit))
+
+		e = str(enrolled) + '/' + str(limit)
+		w = str(wait_list) + '/' + str(wait_limit)
+
+		self.stats[self.ccn] = (e, w)
 
 
 def main():
@@ -42,26 +40,41 @@ def main():
 	class_url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term=SP&p_deptname=--+Choose+a+Department+Name+--&p_classif=--+Choose+a+Course+Classification+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course=' + num + '&p_dept=' + dept + '&x=0'
 	contents = urllib.urlopen(class_url).read()
 
-	data = []
+	stats = {}
 	threads = []
-
-	match = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"', contents)
-	for ccn in match:
-		t = myThread(ccn, data)
+	ccns = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"', contents)
+	for ccn in ccns:
+		t = myThread(ccn, stats)
 		t.start()
 		threads.append(t)
 
 	for t in threads:
 		t.join()
 
-	data = sorted(data, key=lambda x: x[0])
-	four_columns = '{0:<9} {1:<7} {2:<9} {3:<9}'
-	print four_columns.format('Name', 'CCN', 'Enrolled', 'Waitlist')
-	
-	for info, ccn, enrolled, limit, wait_list, wait_limit in data:
-		enrolled = str(enrolled) + '/' + str(limit)
-		wait_list = str(wait_list) + '/' + str(wait_limit)
-		print four_columns.format(info, ccn, enrolled, wait_list)
+	data = []
+	for line in contents.split('\n'):
+		if ':&#160;' in line:
+			raw = re.findall(r'>([^:<]+)', line)
+			if len(raw) == 1:
+				raw.append('')
+			data.append(raw[1].strip())
+
+	columns = '{0:<10}{1:<8}{2:<11}{3:<11}{4:<14}{5:<20}'
+	print columns.format('Section', 'CCN', 'Enrolled', 'Waitlist', 'Time', 'Place')
+	print '-------   -----   --------   --------   -----------   --------------'
+
+	sections = zip(*[iter(data)] * 11)
+	# sections contains a list per section:
+	# [course, coursetitle, location, instructor, status, ccn, units, 
+	#  finalgroup, restrictions, note]
+
+	for i, g in enumerate(sections):
+		enrolled, wait_list = stats[ccns[i]]
+		name = ' '.join(g[0].split()[-2:])
+		time_place = map(lambda x: x.strip(), g[2].split(','))
+		time = time_place[0]
+		place = time_place[1]
+		print columns.format(name, g[5], enrolled, wait_list, time, place)
 
 
 if __name__=="__main__":
