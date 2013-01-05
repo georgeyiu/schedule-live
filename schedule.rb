@@ -1,17 +1,29 @@
 # encoding: utf-8
-require 'nokogiri'
+#require 'nokogiri'
 require 'open-uri'
 
 def schedule(ccn)
 	numbers = []
-	doc = Nokogiri::HTML(open('https://telebears.berkeley.edu/enrollment-osoc/osc?_InField1=RESTRIC&_InField2=' + ccn + '&_InField3=13B4'))
-	doc.search('blockquote').each do |line|
-		if (line.content.scan(/[0-9]+/) != [])
-			numbers = line.content.scan(/[0-9]+/)
+	nums = []
+
+	#doc = Nokogiri::HTML(open('https://telebears.berkeley.edu/enrollment-osoc/osc?_InField1=RESTRIC&_InField2=' + ccn + '&_InField3=13B4'))
+	#doc.search('blockquote').each do |line|
+	#	if (line.content.scan(/[0-9]+/) != [])
+	#		numbers = line.content.scan(/[0-9]+/)
+	#	end
+	#end
+	#numbers += ['0', '0', '0', '0']
+
+	doc = open('https://telebears.berkeley.edu/enrollment-osoc/osc?_InField1=RESTRIC&_InField2=' + ccn + '&_InField3=13B4')
+	doc.each_line do |line|
+		if line.include?('limit')
+			a = line.scan(Regexp.new(/([0-9]+)/))
+			nums += a[0] + a[1]
 		end
 	end
-	numbers += ['0', '0', '0', '0']
-	enrolled, limit, wait_list, wait_limit = numbers
+
+	nums += ['0', '0', '0', '0']
+	enrolled, limit, wait_list, wait_limit = nums
 	return (enrolled + '/' + limit), (wait_list + '/' + wait_limit)
 end
 

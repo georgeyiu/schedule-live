@@ -18,8 +18,7 @@ class myThread(threading.Thread):
 				match = re.findall(r'([0-9]+)', line)
 				if match:
 					numbers += match
-		numbers += ['0', '0', '0', '0']
-		numbers = map(str, numbers)
+		numbers += ['0']*4
 		enrolled = numbers[0] + '/' + numbers[1]
 		waitlist = numbers[2] + '/' + numbers[3]
 		self.stats[self.ccn] = (enrolled, waitlist)
