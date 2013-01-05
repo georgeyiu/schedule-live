@@ -18,16 +18,14 @@ class myThread(threading.Thread):
 				match = re.findall(r'([0-9]+)', line)
 				if match:
 					numbers += match
-		numbers += [0, 0, 0, 0]
-		(enrolled, limit, wait_list, wait_limit) = tuple(numbers[:4])
+		numbers += ['0', '0', '0', '0']
+		numbers = map(str, numbers)
+		enrolled = numbers[0] + '/' + numbers[1]
+		waitlist = numbers[2] + '/' + numbers[3]
+		self.stats[self.ccn] = (enrolled, waitlist)
 
-		e = str(enrolled) + '/' + str(limit)
-		w = str(wait_list) + '/' + str(wait_limit)
-		self.stats[self.ccn] = (e, w)
-		
 
 def main():
-
 	dept = '+'.join(sys.argv[1:-1])
 	num = sys.argv[-1]
 	class_url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term=SP&p_deptname=--+Choose+a+Department+Name+--&p_classif=--+Choose+a+Course+Classification+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course=' + num + '&p_dept=' + dept + '&x=0'
@@ -52,9 +50,9 @@ def main():
 				raw.append('')
 			data.append(raw[1].strip())
 
-	columns = '{0:<10}{1:<8}{2:<11}{3:<11}{4:<14}{5:<20}'
+	columns = '{0:<10}{1:<9}{2:<11}{3:<11}{4:<14}{5:<20}'
 	print columns.format('Section', 'CCN', 'Enrolled', 'Waitlist', 'Time', 'Place')
-	print '-------   -----   --------   --------   -----------   --------------'
+	print '-------   -----    --------   --------   -----------   --------------'
 
 	sections = zip(*[iter(data)] * 11)
 	# sections contains a list per section:
@@ -62,12 +60,12 @@ def main():
 	#  finalgroup, restrictions, note]
 
 	for ccn_lookup, section in zip(ccns, sections):
-		enrolled, wait_list = stats[ccn_lookup]
-		name = ' '.join(g[0].split()[-2:])
-		time_place = g[2].split(',')*2
+		enrolled, waitlist = stats[ccn_lookup]
+		name = ' '.join(section[0].split()[-2:])
+		time_place = section[2].split(',')*2
 		time = time_place[0].strip()
 		place = time_place[1].strip()
-		print columns.format(name, g[5], enrolled, wait_list, time, place)
+		print columns.format(name, section[5], enrolled, waitlist, time, place)
 
 
 if __name__=="__main__":
