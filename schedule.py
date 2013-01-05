@@ -35,8 +35,16 @@ class myThread(threading.Thread):
 
 
 def main():
-	dept = sys.argv[1]
-	num = sys.argv[2]
+
+	dept = ""
+	numIndex = len(sys.argv) - 1
+	for i in range(1, numIndex):
+		if (i < numIndex - 1):
+			dept += sys.argv[i] + " " 
+		else:
+			dept += sys.argv[i]
+		
+	num = sys.argv[numIndex]
 	class_url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term=SP&p_deptname=--+Choose+a+Department+Name+--&p_classif=--+Choose+a+Course+Classification+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course=' + num + '&p_dept=' + dept + '&x=0'
 	contents = urllib.urlopen(class_url).read()
 
