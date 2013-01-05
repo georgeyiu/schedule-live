@@ -80,8 +80,12 @@ def main():
 		enrolled, wait_list = stats[ccns[i]]
 		name = ' '.join(g[0].split()[-2:])
 		time_place = map(lambda x: x.strip(), g[2].split(','))
-		time = time_place[0]
-		place = time_place[1]
+		if len(time_place) == 2:
+			time = time_place[0]
+			place = time_place[1]
+		else:
+			time = time_place[0]
+			place = time_place[0]
 		print columns.format(name, g[5], enrolled, wait_list, time, place)
 
 
