@@ -18,33 +18,18 @@ class myThread(threading.Thread):
 				match = re.findall(r'([0-9]+)', line)
 				if match:
 					numbers += match
-
-		(enrolled, limit, wait_list, wait_limit) = (0, 0, 0, 0)
-
-		if (len(numbers) >= 2):
-			enrolled = numbers[0]
-			limit = numbers[1]
-		if (len(numbers) == 4):
-			wait_list = numbers[2]
-			wait_limit = numbers[3]
+		numbers += [0, 0, 0, 0]
+		(enrolled, limit, wait_list, wait_limit) = tuple(numbers[:4])
 
 		e = str(enrolled) + '/' + str(limit)
 		w = str(wait_list) + '/' + str(wait_limit)
-
 		self.stats[self.ccn] = (e, w)
-
+		
 
 def main():
 
-	dept = ""
-	numIndex = len(sys.argv) - 1
-	for i in range(1, numIndex):
-		if (i < numIndex - 1):
-			dept += sys.argv[i] + " " 
-		else:
-			dept += sys.argv[i]
-		
-	num = sys.argv[numIndex]
+	dept = '+'.join(sys.argv[1:-1])
+	num = sys.argv[-1]
 	class_url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term=SP&p_deptname=--+Choose+a+Department+Name+--&p_classif=--+Choose+a+Course+Classification+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course=' + num + '&p_dept=' + dept + '&x=0'
 	contents = urllib.urlopen(class_url).read()
 
@@ -76,16 +61,12 @@ def main():
 	# [course, coursetitle, location, instructor, status, ccn, units, 
 	#  finalgroup, restrictions, note]
 
-	for i, g in enumerate(sections):
-		enrolled, wait_list = stats[ccns[i]]
+	for ccn_lookup, section in zip(ccns, sections):
+		enrolled, wait_list = stats[ccn_lookup]
 		name = ' '.join(g[0].split()[-2:])
-		time_place = map(lambda x: x.strip(), g[2].split(','))
-		if len(time_place) == 2:
-			time = time_place[0]
-			place = time_place[1]
-		else:
-			time = time_place[0]
-			place = time_place[0]
+		time_place = g[2].split(',')*2
+		time = time_place[0].strip()
+		place = time_place[1].strip()
 		print columns.format(name, g[5], enrolled, wait_list, time, place)
 
 
