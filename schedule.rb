@@ -1,5 +1,3 @@
-# encoding: utf-8
-#require 'nokogiri'
 require 'open-uri'
 require 'thread/pool'
 
@@ -45,8 +43,8 @@ def main()
 	data = []
 	doc.each_line do |line|
 		if line.include?(':&#160;')
-			raw = line.scan(Regexp.new(/>([^<&]+)/))
-			data << raw[1][0].strip
+			raw = line.scan(Regexp.new(/>([^<]+)/))
+			data << raw[1][0].strip().split(':&#160;')[0]
 		end
 	end
 
