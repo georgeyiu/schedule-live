@@ -1,11 +1,17 @@
 #!/usr/bin/python
 
-import re, sys, urllib, urllib2, pickle
+import re
+import sys
+import urllib
+import urllib2
+
 from multiprocessing import Pool
 
 def scrape_enrollment(ccn):
     url = "https://telebears.berkeley.edu/enrollment-osoc/osc"
-    data = urllib.urlencode({"_InField1":"RESTRIC", "_InField2":str(ccn), "_InField3":"13D2"})
+    data = urllib.urlencode({"_InField1":"RESTRIC",
+                             "_InField2":str(ccn),
+                             "_InField3":"14B4"})
     content = urllib2.urlopen(urllib2.Request(url, data)).read()
     numbers = []
     for line in filter(lambda l: 'limit' in l, content.split('\n')):
@@ -16,7 +22,10 @@ def scrape_enrollment(ccn):
     return (ccn, (enrolled, waitlist))
 
 def course_search(dept, num):
-    url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term=FL&p_deptname=--+Choose+a+Department+Name+--&p_classif=--+Choose+a+Course+Classification+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course=' + num + '&p_dept=' + dept + '&x=0'
+    url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term=SP&p_deptname=--+Ch' \
+          'oose+a+Department+Name+--&p_classif=--+Choose+a+Course+Classificat' \
+          'ion+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course=' + \
+          num + '&p_dept=' + dept + '&x=0'
     contents = urllib.urlopen(url).read()
 
     stats = {}
@@ -24,7 +33,8 @@ def course_search(dept, num):
         if res: stats[res[0]] = res[1]
 
     pool = Pool(20)
-    ccns = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"', contents)
+    ccns = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"',
+                      contents)
     for ccn in ccns:
         pool.apply_async(scrape_enrollment, (ccn,), callback=save)
     pool.close()
@@ -56,7 +66,7 @@ def course_search(dept, num):
         print columns.format(name, section[5], enrolled, waitlist, time, place)
 
 
-if __name__=="__main__":
+if __name__== '__main__':
     dept = '+'.join(sys.argv[1:-1])
     num = sys.argv[-1]
     course_search(dept, num)
