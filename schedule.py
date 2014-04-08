@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import argparse
 import re
 import sys
 import urllib
@@ -7,11 +8,13 @@ import urllib2
 
 from multiprocessing import Pool
 
+SEMESTER_CODE = "14D2"
+
 def scrape_enrollment(ccn):
     url = "https://telebears.berkeley.edu/enrollment-osoc/osc"
     data = urllib.urlencode({"_InField1":"RESTRIC",
                              "_InField2":str(ccn),
-                             "_InField3":"14B4"})
+                             "_InField3":SEMESTER_CODE})
     content = urllib2.urlopen(urllib2.Request(url, data)).read()
     numbers = []
     for line in filter(lambda l: 'limit' in l, content.split('\n')):
@@ -32,7 +35,7 @@ def course_search(dept, num):
     def save(res):
         if res: stats[res[0]] = res[1]
 
-    pool = Pool(20)
+    pool = Pool(30)
     ccns = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"',
                       contents)
     for ccn in ccns:
@@ -67,7 +70,13 @@ def course_search(dept, num):
 
 
 if __name__== '__main__':
-    dept = '+'.join(sys.argv[1:-1])
-    num = sys.argv[-1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'class',
+        nargs='*',
+        help='<dept abbrev> <coursenum>')
+    args = vars(parser.parse_args())
+    dept = args['class'][:-1]
+    num = args['class'][-1]
+    dept = '+'.join(dept) if dept else 'cs'
     course_search(dept, num)
-
