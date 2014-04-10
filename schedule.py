@@ -8,6 +8,7 @@ import urllib2
 
 from multiprocessing import Pool
 
+TERM = ["FL", "SP", "SU"][0]
 SEMESTER_CODE = "14D2"
 
 def scrape_enrollment(ccn):
@@ -25,10 +26,10 @@ def scrape_enrollment(ccn):
     return (ccn, (enrolled, waitlist))
 
 def course_search(dept, num):
-    url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term=SP&p_deptname=--+Ch' \
+    url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term={}&p_deptname=--+Ch' \
           'oose+a+Department+Name+--&p_classif=--+Choose+a+Course+Classificat' \
-          'ion+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course=' + \
-          num + '&p_dept=' + dept + '&x=0'
+          'ion+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course={}&' \
+          'p_dept={}&x=0'.format(TERM, num, dept)
     contents = urllib.urlopen(url).read()
 
     stats = {}
