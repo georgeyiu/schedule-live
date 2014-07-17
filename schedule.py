@@ -11,6 +11,19 @@ from multiprocessing import Pool
 TERM = ["FL", "SP", "SU"][0]
 SEMESTER_CODE = "14D2"
 
+class colors:
+    HEADER = '\033[95m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+
+    @staticmethod
+    def header(msg):
+        return colors.HEADER + msg + colors.ENDC
+
+    @staticmethod
+    def fail(msg):
+        return colors.FAIL + msg + colors.ENDC
+
 def scrape_enrollment(ccn):
     url = "https://telebears.berkeley.edu/enrollment-osoc/osc"
     data = urllib.urlencode({"_InField1":"RESTRIC",
@@ -67,8 +80,13 @@ def course_search(dept, num):
         time_place = section[2].split(',')*2
         time = time_place[0].strip()
         place = time_place[1].strip()
-        print columns.format(name, section[5], enrolled, waitlist, time, place)
+        result = columns.format(name, section[5], enrolled, waitlist, time, place)
 
+        # check if a section has space
+        students, spaces = map(int, enrolled.split('/'))
+        if students < spaces:
+            result = result.replace(enrolled, colors.header(enrolled), 1)
+        print result
 
 if __name__== '__main__':
     parser = argparse.ArgumentParser()
