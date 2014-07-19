@@ -6,7 +6,7 @@ Live enrollment for each lecture/section is typically hidden in links, making it
 
 ###Basic Usage
 
-	gy:schedule-live georgeyiu$ python schedule.py bio eng 104
+	$ python schedule.py bio eng 104
 	Section   CCN      Enrolled   Waitlist   Time          Place               
 	-------   -----    --------   --------   -----------   --------------
 	001 LEC   06527    94/141     6/15       MWF 11-12P    277 CORY            
