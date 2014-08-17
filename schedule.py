@@ -94,11 +94,6 @@ def scrape_enrollment(ccn, semester, referer, session):
     enrolled = numbers[0] + '/' + numbers[1]
     waitlist = numbers[2] + '/' + numbers[3]
 
-    if enrolled == '0/0':
-        with open('{}.txt'.format(ccn), 'w') as f:
-            f.write(content)
-            print req.status_code
-            print ccn, enrolled, waitlist
     return (ccn, (enrolled, waitlist))
 
 def course_search(dept, num):
