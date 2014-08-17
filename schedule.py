@@ -43,8 +43,7 @@ def getSession():
 
         session = requests.Session()
 
-        authenticated = False
-        while not authenticated:
+        while True:
             soup = bs(requests.get(telebears).text)
             inputs = soup.findAll('input')
             data = dict([(e['name'], e['value']) \
@@ -59,7 +58,7 @@ def getSession():
                                headers={'User-Agent': 'Mozilla/5.0'},
                                data=data)
             if 'Passphrase you provided are incorrect' not in res.text:
-                authenticated = True
+                break
             print 'The CalNet ID and/or Passphrase you provided are incorrect. ' \
                   'Please try again.'
 
