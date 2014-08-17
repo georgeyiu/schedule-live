@@ -6,6 +6,7 @@ import os
 import pickle
 import re
 import requests
+import sys
 import urllib2
 
 from bs4 import BeautifulSoup as bs
@@ -13,7 +14,6 @@ from multiprocessing import Pool
 
 
 TERM = ["FL", "SP", "SU"][0]
-SEMESTER_CODE = "14D2"
 
 class colors:
     HEADER = '\033[92m'
@@ -59,13 +59,13 @@ def getSession():
 
     return session
 
-def scrape_enrollment(ccn, referer, session):
+def scrape_enrollment(ccn, semester, referer, session):
 
     url = 'https://telebears.berkeley.edu/enrollment-osoc/osc?{}'
     fields = {
         '_InField1': 'RESTRIC',
         '_InField2': ccn,
-        '_InField3': SEMESTER_CODE
+        '_InField3': semester
     }
     params = '&'.join(['{}={}'.format(x[0],x[1]) for x in fields.iteritems()])
     session.headers.update({'referer': referer})
@@ -93,11 +93,15 @@ def course_search(dept, num):
     pool = Pool(30)
     ccns = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"',
                       contents)
+    semester = re.search(r'input type="hidden" name="_InField3" value="(.*)"',
+                      contents).group(1)
 
     session = getSession()
 
     for ccn in ccns:
-        pool.apply_async(scrape_enrollment, args=(ccn, url, session), callback=save)
+        pool.apply_async(scrape_enrollment,
+                         args=(ccn, semester, url, session),
+                         callback=save)
     pool.close()
     pool.join()
 
@@ -139,6 +143,9 @@ if __name__== '__main__':
         nargs='*',
         help='<dept abbrev> <coursenum>')
     args = vars(parser.parse_args())
+    if not args['class']:
+        print 'USAGE: python schedule.py <dept abbrev> <coursenum>'
+        sys.exit()
     dept = args['class'][:-1]
     num = args['class'][-1]
     dept = '+'.join(dept) if dept else 'cs'
