@@ -12,8 +12,8 @@ import urllib2
 from bs4 import BeautifulSoup as bs
 from multiprocessing import Pool
 
-
-TERM = ["FL", "SP", "SU"][0]
+# Semester must be FL, SP, or SU
+TERM = 'FL'
 
 class colors:
     HEADER = '\033[92m'
