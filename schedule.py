@@ -10,7 +10,7 @@ import sys
 import urllib2
 
 from bs4 import BeautifulSoup as bs
-from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool as Pool
 
 # Semester must be FL, SP, or SU
 TERM = 'FL'
@@ -112,7 +112,7 @@ def course_search(dept, num):
     def save(res):
         if res: stats[res[0]] = res[1]
 
-    pool = Pool(25)
+    pool = Pool(20)
     ccns = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"',
                       contents)
     semester = re.search(r'input type="hidden" name="_InField3" value="(.*)"',
