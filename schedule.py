@@ -78,14 +78,28 @@ def scrape_enrollment(ccn, semester, referer, session):
     }
     params = '&'.join(['{}={}'.format(x[0],x[1]) for x in fields.iteritems()])
     session.headers.update({'referer': referer})
-    content = session.get(url.format(params)).text
 
+    code = 500
+    tries = 0
+    while tries < 3:
+        req = session.get(url.format(params))
+        if req.status_code == 200:
+            break
+        tries += 1
+
+    content = req.text
     numbers = []
     for line in filter(lambda l: 'limit' in l, content.split('\n')):
         numbers += re.findall(r'([0-9]+)', line)
     numbers += ['0']*4
     enrolled = numbers[0] + '/' + numbers[1]
     waitlist = numbers[2] + '/' + numbers[3]
+
+    if enrolled == '0/0':
+        with open('{}.txt'.format(ccn), 'w') as f:
+            f.write(content)
+            print req.status_code
+            print ccn, enrolled, waitlist
     return (ccn, (enrolled, waitlist))
 
 def course_search(dept, num):
@@ -99,7 +113,7 @@ def course_search(dept, num):
     def save(res):
         if res: stats[res[0]] = res[1]
 
-    pool = Pool(30)
+    pool = Pool(25)
     ccns = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"',
                       contents)
     semester = re.search(r'input type="hidden" name="_InField3" value="(.*)"',
