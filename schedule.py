@@ -40,19 +40,28 @@ def getSession():
         telebears = \
             'https://auth.berkeley.edu/cas/login?service=https%3A%2F%2F' \
             'telebears.berkeley.edu%2Ftelebears%2Fj_spring_cas_security_check'
-        soup = bs(requests.get(telebears).text)
-        inputs = soup.findAll('input')
-        data = dict([(e['name'], e['value']) \
-                        for e in inputs if e['type'] == 'hidden'])
-
-        username = raw_input('CalNet Username: ' )
-        password = getpass.getpass('CalNet Password: ')
-        data.update({'username': username, 'password': password})
-
-        posturl = 'https://auth.berkeley.edu{}'.format(soup.form['action'])
 
         session = requests.Session()
-        session.post(posturl, headers={'User-Agent': 'Mozilla/5.0'}, data=data)
+
+        authenticated = False
+        while not authenticated:
+            soup = bs(requests.get(telebears).text)
+            inputs = soup.findAll('input')
+            data = dict([(e['name'], e['value']) \
+                            for e in inputs if e['type'] == 'hidden'])
+
+            username = raw_input('CalNet Username: ')
+            password = getpass.getpass('CalNet Password: ')
+            data.update({'username': username, 'password': password})
+
+            posturl = 'https://auth.berkeley.edu{}'.format(soup.form['action'])
+            res = session.post(posturl,
+                               headers={'User-Agent': 'Mozilla/5.0'},
+                               data=data)
+            if 'Passphrase you provided are incorrect' not in res.text:
+                authenticated = True
+            print 'The CalNet ID and/or Passphrase you provided are incorrect. ' \
+                  'Please try again.'
 
         with open(cookie_path, 'w') as f:
             pickle.dump(requests.utils.dict_from_cookiejar(session.cookies), f)
