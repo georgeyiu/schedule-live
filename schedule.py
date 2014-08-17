@@ -1,18 +1,22 @@
 #!/usr/bin/python
 
 import argparse
+import getpass
+import os
+import pickle
 import re
-import sys
-import urllib
+import requests
 import urllib2
 
+from bs4 import BeautifulSoup as bs
 from multiprocessing import Pool
+
 
 TERM = ["FL", "SP", "SU"][0]
 SEMESTER_CODE = "14D2"
 
 class colors:
-    HEADER = '\033[95m'
+    HEADER = '\033[92m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
 
@@ -24,12 +28,49 @@ class colors:
     def fail(msg):
         return colors.FAIL + msg + colors.ENDC
 
-def scrape_enrollment(ccn):
-    url = "https://telebears.berkeley.edu/enrollment-osoc/osc"
-    data = urllib.urlencode({"_InField1":"RESTRIC",
-                             "_InField2":str(ccn),
-                             "_InField3":SEMESTER_CODE})
-    content = urllib2.urlopen(urllib2.Request(url, data)).read()
+def getSession():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    cookie_path = os.path.join(dir_path, 'calnet.cookie')
+    if os.path.isfile(cookie_path):
+        with open(cookie_path, 'r') as f:
+            cookies = requests.utils.cookiejar_from_dict(pickle.load(f))
+        session = requests.Session()
+        session.cookies = cookies
+    else:
+        telebears = \
+            'https://auth.berkeley.edu/cas/login?service=https%3A%2F%2F' \
+            'telebears.berkeley.edu%2Ftelebears%2Fj_spring_cas_security_check'
+        soup = bs(requests.get(telebears).text)
+        inputs = soup.findAll('input')
+        data = dict([(e['name'], e['value']) \
+                        for e in inputs if e['type'] == 'hidden'])
+
+        username = raw_input('CalNet Username: ' )
+        password = getpass.getpass('CalNet Password: ')
+        data.update({'username': username, 'password': password})
+
+        posturl = 'https://auth.berkeley.edu{}'.format(soup.form['action'])
+
+        session = requests.Session()
+        session.post(posturl, headers={'User-Agent': 'Mozilla/5.0'}, data=data)
+
+        with open(cookie_path, 'w') as f:
+            pickle.dump(requests.utils.dict_from_cookiejar(session.cookies), f)
+
+    return session
+
+def scrape_enrollment(ccn, referer, session):
+
+    url = 'https://telebears.berkeley.edu/enrollment-osoc/osc?{}'
+    fields = {
+        '_InField1': 'RESTRIC',
+        '_InField2': ccn,
+        '_InField3': SEMESTER_CODE
+    }
+    params = '&'.join(['{}={}'.format(x[0],x[1]) for x in fields.iteritems()])
+    session.headers.update({'referer': referer})
+    content = session.get(url.format(params)).text
+
     numbers = []
     for line in filter(lambda l: 'limit' in l, content.split('\n')):
         numbers += re.findall(r'([0-9]+)', line)
@@ -39,11 +80,11 @@ def scrape_enrollment(ccn):
     return (ccn, (enrolled, waitlist))
 
 def course_search(dept, num):
-    url = 'https://osoc.berkeley.edu/OSOC/osoc?y=0&p_term={}&p_deptname=--+Ch' \
-          'oose+a+Department+Name+--&p_classif=--+Choose+a+Course+Classificat' \
-          'ion+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&p_course={}&' \
-          'p_dept={}&x=0'.format(TERM, num, dept)
-    contents = urllib.urlopen(url).read()
+    url = 'http://osoc.berkeley.edu/OSOC/osoc?p_term={}&x=0&p_classif=--+' \
+          'Choose+a+Course+Classification+--&p_deptname=--+Choose+a+Depar' \
+          'tment+Name+--&p_presuf=--+Choose+a+Course+Prefix%2fSuffix+--&y' \
+          '=0&p_course={}&p_dept={}'.format(TERM, num, dept)
+    contents = urllib2.urlopen(url).read()
 
     stats = {}
     def save(res):
@@ -52,8 +93,11 @@ def course_search(dept, num):
     pool = Pool(30)
     ccns = re.findall(r'input type="hidden" name="_InField2" value="([0-9]*)"',
                       contents)
+
+    session = getSession()
+
     for ccn in ccns:
-        pool.apply_async(scrape_enrollment, (ccn,), callback=save)
+        pool.apply_async(scrape_enrollment, args=(ccn, url, session), callback=save)
     pool.close()
     pool.join()
 
