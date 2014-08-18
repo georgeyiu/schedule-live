@@ -7,6 +7,7 @@ import pickle
 import re
 import requests
 import sys
+import time
 import urllib2
 
 from bs4 import BeautifulSoup as bs
@@ -31,16 +32,21 @@ class colors:
 def getSession():
     dir_path = os.path.dirname(os.path.realpath(__file__))
     cookie_path = os.path.join(dir_path, 'calnet.cookie')
+    renew = True
     if os.path.isfile(cookie_path):
-        with open(cookie_path, 'r') as f:
-            cookies = requests.utils.cookiejar_from_dict(pickle.load(f))
-        session = requests.Session()
-        session.cookies = cookies
-    else:
+        expiration = 60*60
+        if time.time() < os.path.getctime(cookie_path) + expiration:
+            with open(cookie_path, 'r') as f:
+                cookies = requests.utils.cookiejar_from_dict(pickle.load(f))
+            session = requests.Session()
+            session.cookies = cookies
+            renew = False
+        else:
+            print 'Cookie expired. Please log in again.'
+    if renew:
         telebears = \
             'https://auth.berkeley.edu/cas/login?service=https%3A%2F%2F' \
             'telebears.berkeley.edu%2Ftelebears%2Fj_spring_cas_security_check'
-
         session = requests.Session()
 
         while True:
